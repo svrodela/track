@@ -1,0 +1,11 @@
+{
+  "name": "track",
+  "version": "1.0.0",
+  "description": "It has an IoT device API for predicting maintenance on industrial machines using AI",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "svrodela",
+  "license": "ISC"
+}
