@@ -36,38 +36,51 @@ app.post('/telemetry', async (req, res) => {
   try {
 
     const {
-      device_id,
       rms,
       peak,
+      crest,
+      kurtosis,
       freq,
       temp
     } = req.body;
 
+    if (
+      rms === undefined ||
+      peak === undefined ||
+      crest === undefined ||
+      kurtosis === undefined ||
+      freq === undefined ||
+      temp === undefined
+    ) {
+      return res.status(400).json({
+        status: "error",
+        message: "faltan datos"
+      });
+    }
+
     const data = {
       rms: Number(rms),
       peak: Number(peak),
+      crest: Number(crest),
+      kurtosis: Number(kurtosis),
       freq: Number(freq),
       temp: Number(temp),
       timestamp: new Date()
     };
 
-    await db
-      .collection('devices')
-      .doc(device_id)
-      .collection('telemetry')
-      .add(data);
+    const doc = await db.collection("telemetry").add(data);
 
-    res.send({
+    res.json({
       status: "ok",
-      device: device_id,
-      data
+      id: doc.id,
+      data: data
     });
 
   } catch (error) {
 
     console.error(error);
 
-    res.status(500).send({
+    res.status(500).json({
       status: "error",
       error: error.message
     });
