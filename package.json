@@ -4,6 +4,7 @@
   "description": "It has an IoT device API for predicting maintenance on industrial machines using AI",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "svrodela",
