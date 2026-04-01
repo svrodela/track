@@ -26,7 +26,14 @@ app.get('/', (req, res) => {
     <li>GET /grafica/:device</li>
     <li>POST /device/status</li>
     <li>GET /device/status/:device</li>
-  </ul>
+    
+     <li>GANADO/li>
+    <li>POST /livestock/telemetry</li>
+    <li>GET /livestock/devices</li>
+    <li>GET /livestock/last/:device</li>
+    <li>GET /livestock/history/:device</li>
+    <li>GET /livestock/analysis/:device</li>
+ </ul>
   `);
 });
 
@@ -275,6 +282,198 @@ app.get('/device/status/:device', async (req, res) => {
 
 });
 
+//// TELEMETRIA PARA GANADO
+app.post('/livestock/telemetry', async (req, res) => {
+
+  try {
+
+    const {
+      deviceId,
+      ax,
+      ay,
+      az,
+      pitch,
+      roll,
+      magnitud
+    } = req.body;
+
+    if (
+      !deviceId ||
+      ax === undefined ||
+      ay === undefined ||
+      az === undefined ||
+      pitch === undefined ||
+      roll === undefined ||
+      magnitud === undefined
+    ) {
+      return res.status(400).json({
+        status: "error",
+        message: "faltan datos"
+      });
+    }
+
+    const data = {
+      ax: Number(ax),
+      ay: Number(ay),
+      az: Number(az),
+      pitch: Number(pitch),
+      roll: Number(roll),
+      magnitud: Number(magnitud),
+      timestamp: new Date()
+    };
+
+    const doc = await db
+      .collection("livestock")
+      .doc(deviceId)
+      .collection("telemetry")
+      .add(data);
+
+    res.json({
+      status: "ok",
+      id: doc.id,
+      data: data
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      status: "error",
+      error: error.message
+    });
+
+  }
+
+});
+app.get('/livestock/last/:device', async (req, res) => {
+
+  try {
+
+    const device = req.params.device;
+
+    const snapshot = await db
+      .collection('livestock')
+      .doc(device)
+      .collection('telemetry')
+      .orderBy('timestamp', 'desc')
+      .limit(1)
+      .get();
+
+    let data = [];
+
+    snapshot.forEach(doc => data.push(doc.data()));
+
+    res.send(data);
+
+  } catch (error) {
+
+    res.status(500).send(error);
+
+  }
+
+});
+
+app.get('/livestock/history/:device', async (req, res) => {
+
+  try {
+
+    const device = req.params.device;
+
+    const snapshot = await db
+      .collection('livestock')
+      .doc(device)
+      .collection('telemetry')
+      .orderBy('timestamp', 'desc')
+      .limit(200)
+      .get();
+
+    let data = [];
+
+    snapshot.forEach(doc => data.push(doc.data()));
+
+    res.send(data);
+
+  } catch (error) {
+
+    res.status(500).send(error);
+
+  }
+
+});
+
+
+app.get('/livestock/analysis/:device', async (req, res) => {
+
+  try {
+
+    const device = req.params.device;
+
+    const snapshot = await db
+      .collection('livestock')
+      .doc(device)
+      .collection('telemetry')
+      .orderBy('timestamp', 'desc')
+      .limit(100)
+      .get();
+
+    let registros = [];
+
+    snapshot.forEach(doc => registros.push(doc.data()));
+
+    if (registros.length === 0) {
+      return res.json({ status: "sin datos" });
+    }
+
+    // lógica simple
+    let inmovil = registros.filter(r => r.magnitud < 0.5);
+    let acostado = registros.filter(r => Math.abs(r.roll) > 45);
+
+    const porcentajeInmovil = (inmovil.length / registros.length) * 100;
+    const porcentajeAcostado = (acostado.length / registros.length) * 100;
+
+    let estado = "NORMAL";
+
+    if (porcentajeInmovil > 70 && porcentajeAcostado > 50) {
+      estado = "POSTRADA";
+    } else if (porcentajeInmovil > 50) {
+      estado = "INACTIVA";
+    }
+
+    res.json({
+      total: registros.length,
+      porcentajeInmovil,
+      porcentajeAcostado,
+      estado
+    });
+
+  } catch (error) {
+
+    res.status(500).send(error);
+
+  }
+
+});
+
+app.get('/livestock/devices', async (req, res) => {
+
+  try {
+
+    const snapshot = await db.collection('livestock').get();
+
+    let devices = [];
+
+    snapshot.forEach(doc => devices.push(doc.id));
+
+    res.send(devices);
+
+  } catch (error) {
+
+    res.status(500).send(error);
+
+  }
+
+});
 //arrancar servidor
 
 app.listen(PORT, () => {

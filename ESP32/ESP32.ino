@@ -8,17 +8,20 @@
 #define SAMPLES 128
 #define SAMPLING_FREQ 500
 
+#define SDA_PIN 8
+#define SCL_PIN 9
+
 double vReal[SAMPLES];
 double vImag[SAMPLES];
 
-ArduinoFFT FFT = ArduinoFFT(vReal, vImag, SAMPLES, SAMPLING_FREQ);
+ArduinoFFT<double> FFT = ArduinoFFT<double>(vReal, vImag, SAMPLES, SAMPLING_FREQ);
 
 Adafruit_MPU6050 mpu;
 
-const char* ssid = "TU_WIFI";
-const char* password = "TU_PASSWORD";
+const char* ssid = "Majo";
+const char* password = "Gogo220812";
 
-const char* serverName = "https://track.onrender.com/telemetry";
+const char* serverName = "https://track-1-v9ut.onrender.com/telemetry";
 
 float rms;
 float peak;
@@ -30,7 +33,7 @@ float temp;
 void setup() {
 
   Serial.begin(115200);
-  Wire.begin();
+  Wire.begin(SDA_PIN, SCL_PIN);
 
   WiFi.begin(ssid, password);
 
@@ -94,14 +97,11 @@ void loop() {
   kurtosis = (sumFourth / SAMPLES) / pow(rms, 4);
 
   // FFT
-  FFT.Windowing(FFT_WIN_TYP_HAMMING, FFT_FORWARD);
-  FFT.Compute(FFT_FORWARD);
-  FFT.ComplexToMagnitude();
+  FFT.windowing(FFTWindow::Hamming, FFTDirection::Forward);
+  FFT.compute(FFTDirection::Forward);
+  FFT.complexToMagnitude();
 
-  int peakIndex = FFT.MajorPeak();
-
-  dominantFreq = peakIndex * ((double)SAMPLING_FREQ / SAMPLES);
-
+  dominantFreq = FFT.majorPeak();
   // Temperatura
   mpu.getEvent(&a, &g, &t);
   temp = t.temperature;
