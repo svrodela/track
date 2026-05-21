@@ -194,6 +194,66 @@ app.get('/grafica', async (req, res) => {
 
 });
 
+let cacheGrafica = [];
+let lastUpdate = 0;
+
+app.get('/grafica2', async (req, res) => {
+
+  try {
+
+    const now = Date.now();
+
+    // cache 5 segundos
+    if (now - lastUpdate < 5000) {
+      return res.json(cacheGrafica);
+    }
+
+    const snapshot = await db
+      .collection('telemetry')
+      .orderBy('timestamp', 'desc')
+      .limit(20)
+      .get();
+
+    let data = [];
+
+    snapshot.forEach(doc => {
+
+      const d = doc.data();
+
+      data.push({
+        rms: d.rms,
+        peak: d.peak,
+        crest: d.crest,
+        kurtosis: d.kurtosis,
+        freq: d.freq,
+        temp: d.temp,
+        timestamp: {
+          _seconds: d.timestamp._seconds,
+          _nanoseconds: d.timestamp._nanoseconds
+        }
+      });
+
+    });
+
+    data.reverse();
+
+    cacheGrafica = data;
+    lastUpdate = now;
+
+    res.json(data);
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      status: "error",
+      error: error.message
+    });
+
+  }
+
+});
 
 //lista de dispositivos
 
