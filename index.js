@@ -211,7 +211,7 @@ app.get('/grafica2', async (req, res) => {
     const snapshot = await db
       .collection('telemetry')
       .orderBy('timestamp', 'desc')
-      .limit(20)
+      .limit(5)
       .get();
 
     let data = [];
