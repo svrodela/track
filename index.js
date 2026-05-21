@@ -140,7 +140,7 @@ app.get('/telemetry', async (req, res) => {
 
 //grafica 20 registros
 
-// gráfica general últimos 20 registros
+// gráfica últimos 20 registros formato array
 
 app.get('/grafica', async (req, res) => {
 
@@ -156,21 +156,30 @@ app.get('/grafica', async (req, res) => {
 
     snapshot.forEach(doc => {
 
+      const d = doc.data();
+
       data.push({
-        id: doc.id,
-        ...doc.data()
+
+        rms: d.rms,
+        peak: d.peak,
+        crest: d.crest,
+        kurtosis: d.kurtosis,
+        freq: d.freq,
+        temp: d.temp,
+
+        timestamp: {
+          _seconds: d.timestamp._seconds,
+          _nanoseconds: d.timestamp._nanoseconds
+        }
+
       });
 
     });
 
-    // invertir para gráfica cronológica
+    // ordenar cronológicamente
     data.reverse();
 
-    res.json({
-      status: "ok",
-      total: data.length,
-      data: data
-    });
+    res.json(data);
 
   } catch (error) {
 
