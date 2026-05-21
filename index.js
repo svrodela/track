@@ -138,6 +138,54 @@ app.get('/telemetry', async (req, res) => {
 
 });
 
+//grafica 20 registros
+
+// gráfica general últimos 20 registros
+
+app.get('/grafica', async (req, res) => {
+
+  try {
+
+    const snapshot = await db
+      .collection('telemetry')
+      .orderBy('timestamp', 'desc')
+      .limit(20)
+      .get();
+
+    let data = [];
+
+    snapshot.forEach(doc => {
+
+      data.push({
+        id: doc.id,
+        ...doc.data()
+      });
+
+    });
+
+    // invertir para gráfica cronológica
+    data.reverse();
+
+    res.json({
+      status: "ok",
+      total: data.length,
+      data: data
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      status: "error",
+      error: error.message
+    });
+
+  }
+
+});
+
+
 //lista de dispositivos
 
 app.get('/devices', async (req, res) => {
