@@ -96,6 +96,48 @@ app.post('/telemetry', async (req, res) => {
 
 });
 
+// obtener toda la telemetría
+
+app.get('/telemetry', async (req, res) => {
+
+  try {
+
+    const snapshot = await db
+      .collection('telemetry')
+      .orderBy('timestamp', 'desc')
+      .limit(100)
+      .get();
+
+    let data = [];
+
+    snapshot.forEach(doc => {
+
+      data.push({
+        id: doc.id,
+        ...doc.data()
+      });
+
+    });
+
+    res.json({
+      status: "ok",
+      total: data.length,
+      data: data
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      status: "error",
+      error: error.message
+    });
+
+  }
+
+});
+
 //lista de dispositivos
 
 app.get('/devices', async (req, res) => {
